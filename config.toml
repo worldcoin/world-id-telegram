@@ -1,0 +1,33 @@
+# Your World ID App ID. You can get it from https://developer.worldcoin.com
+# You can put it below or set the WLD_CAPTCHA_APP_ID env var
+# app_id = "..."
+
+# Your Telegram bot token. You can get it by messaging @BotFather on Telegram.
+# You can put it below or set the WLD_CAPTCHA_BOT_TOKEN env var
+# bot_token = "..."
+
+# The URL to the server running this bot. It must be accessible from the internet.
+# You can put it below or set the WLD_CAPTCHA_APP_URL env var
+# app_url = "..."
+
+# Add group IDs to restrict bot usage to those groups. Will allow all groups if empty
+# allowed_group_ids = []
+
+# Customize group settings. Replace `-0000000` with your group ID
+[group_settings.-0000000]
+# Set a custom chat name for the group. Will use the group name if empty/
+# chat_name = "Something"
+
+# List of group admins that can use the bot. Will allow all group admins if empty.
+# admin_ids = [1, 2, 3, ...]
+
+# Set the time users have to verify their account before being banned.
+ban_after = "5m"
+
+# Customize messages sent by the bot.
+messages.new_user_template = """
+👋 gm {TAGUSER}! Welcome to {CHATNAME}.
+To access the group, please verify your account with World ID."""
+messages.user_doesnt_match_error = "❌ This message isn't for you"
+messages.successfully_verified = "✅ Verified with World ID. Welcome to the group!"
+messages.unauthorized_group = "❌ You can't use this bot on this group. Bye!"
