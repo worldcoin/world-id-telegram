@@ -41,7 +41,9 @@ async fn verify_page(
 	Path(msg_id): Path<MessageId>,
 	Extension(join_reqs): Extension<JoinRequests>,
 ) -> Result<&'static str, StatusCode> {
-	let join_req = join_reqs.get(&msg_id).ok_or(StatusCode::NOT_FOUND)?;
+	let _join_req = join_reqs.get(&msg_id).ok_or(StatusCode::NOT_FOUND)?;
+
+	//TODO: WorldID proof generation
 
 	Ok("Hello, World!")
 }
