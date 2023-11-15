@@ -46,9 +46,8 @@ pub async fn start(bot: Bot, config: AppConfig, bot_data: User, join_requests: J
 }
 
 async fn verify_page(
-	Path(chat_id): Path<ChatId>,
-	Path(msg_id): Path<MessageId>,
 	Extension(config): Extension<AppConfig>,
+	Path((chat_id, msg_id)): Path<(ChatId, MessageId)>,
 	Extension(join_reqs): Extension<JoinRequests>,
 ) -> Result<Html<String>, StatusCode> {
 	if !join_reqs.contains_key(&(chat_id, msg_id)) {
@@ -102,9 +101,8 @@ struct VerifyRequest {
 
 async fn verify_api(
 	Extension(bot): Extension<Bot>,
-	Path(chat_id): Path<ChatId>,
-	Path(msg_id): Path<MessageId>,
 	Extension(config): Extension<AppConfig>,
+	Path((chat_id, msg_id)): Path<(ChatId, MessageId)>,
 	Extension(join_reqs): Extension<JoinRequests>,
 	Json(req): Json<VerifyRequest>,
 ) -> Result<&'static str, StatusCode> {
