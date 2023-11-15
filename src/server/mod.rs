@@ -47,10 +47,10 @@ pub async fn start(bot: Bot, config: AppConfig, bot_data: User, join_requests: J
 
 async fn verify_page(
 	Extension(config): Extension<AppConfig>,
-	Path((chat_id, msg_id)): Path<(ChatId, MessageId)>,
+	Path((chat_id, msg_id)): Path<(ChatId, i32)>,
 	Extension(join_reqs): Extension<JoinRequests>,
 ) -> Result<Html<String>, StatusCode> {
-	if !join_reqs.contains_key(&(chat_id, msg_id)) {
+	if !join_reqs.contains_key(&(chat_id, MessageId(msg_id))) {
 		return Err(StatusCode::NOT_FOUND);
 	}
 
@@ -102,10 +102,12 @@ struct VerifyRequest {
 async fn verify_api(
 	Extension(bot): Extension<Bot>,
 	Extension(config): Extension<AppConfig>,
-	Path((chat_id, msg_id)): Path<(ChatId, MessageId)>,
+	Path((chat_id, msg_id)): Path<(ChatId, i32)>,
 	Extension(join_reqs): Extension<JoinRequests>,
 	Json(req): Json<VerifyRequest>,
 ) -> Result<&'static str, StatusCode> {
+	let msg_id = MessageId(msg_id);
+
 	let join_req = join_reqs
 		.get(&(chat_id, msg_id))
 		.ok_or(StatusCode::NOT_FOUND)?;
