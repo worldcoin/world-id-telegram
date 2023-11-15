@@ -16,20 +16,20 @@ mod commands;
 mod join_check;
 
 type HandlerResult = Result<(), HandlerError>;
-pub type JoinRequests = Arc<DashMap<(ChatId, MessageId), JoinRequest>>;
+pub type JoinRequests = Arc<DashMap<(ChatId, UserId), JoinRequest>>;
 type HandlerError = Box<dyn std::error::Error + Send + Sync>;
 
 #[derive(Clone)]
 pub struct JoinRequest {
-	pub user_id: UserId,
 	pub is_verified: bool,
+	pub msg_id: Option<MessageId>,
 }
 
 impl JoinRequest {
-	fn new(user_id: UserId) -> Self {
+	pub fn new(msg_id: MessageId) -> Self {
 		Self {
-			user_id,
 			is_verified: false,
+			msg_id: Some(msg_id),
 		}
 	}
 }

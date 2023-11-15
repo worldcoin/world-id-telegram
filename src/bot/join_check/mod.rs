@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use teloxide::{
 	prelude::*,
-	types::{ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, MessageId, User},
+	types::{ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, User},
 	utils::html::escape,
 };
 
@@ -46,7 +46,7 @@ pub async fn join_handler(
 			"Verify with World ID",
 			config
 				.app_url
-				.join(&format!("verify/{}/{}", msg.chat.id, msg.id))?,
+				.join(&format!("verify/{}/{}", msg.chat.id, user.id))?,
 		);
 
 		let msg_id = bot
@@ -57,7 +57,7 @@ pub async fn join_handler(
 			.await?
 			.id;
 
-		join_requests.insert((msg.chat.id, msg_id), JoinRequest::new(user.id));
+		join_requests.insert((msg.chat.id, user.id), JoinRequest::new(msg_id));
 
 		tokio::spawn({
 			let bot = bot.clone();
@@ -65,15 +65,17 @@ pub async fn join_handler(
 			async move {
 				tokio::time::sleep(ban_after).await;
 
-				if let Some((_, data)) = join_requests.remove(&(msg.chat.id, msg_id)) {
+				if let Some((_, data)) = join_requests.remove(&(msg.chat.id, user.id)) {
 					if !data.is_verified {
-						bot.ban_chat_member(msg.chat.id, data.user_id)
+						bot.ban_chat_member(msg.chat.id, user.id)
 							.await
 							.expect("Failed to ban the member after timeout");
 
-						bot.delete_message(msg.chat.id, msg_id)
-							.await
-							.expect("Failed to delete the message after timeout");
+						if let Some(msg_id) = data.msg_id {
+							bot.delete_message(msg.chat.id, msg_id)
+								.await
+								.expect("Failed to delete the message after timeout");
+						}
 					}
 				}
 			}
@@ -86,11 +88,11 @@ pub async fn join_handler(
 pub async fn on_verified(
 	bot: Bot,
 	chat_id: ChatId,
-	msg_id: MessageId,
+	user_id: UserId,
 	join_requests: JoinRequests,
 ) -> HandlerResult {
 	let mut join_req = join_requests
-		.get_mut(&(chat_id, msg_id))
+		.get_mut(&(chat_id, user_id))
 		.ok_or("Can't find the message id in group dialogue")?;
 
 	let Some(permissions) = bot.get_chat(chat_id).await?.permissions() else {
@@ -99,10 +101,12 @@ pub async fn on_verified(
 
 	join_req.is_verified = true;
 
-	bot.restrict_chat_member(chat_id, join_req.user_id, permissions)
+	bot.restrict_chat_member(chat_id, user_id, permissions)
 		.await?;
 
-	bot.delete_message(chat_id, msg_id).await?;
+	if let Some(msg_id) = join_req.msg_id.take() {
+		bot.delete_message(chat_id, msg_id).await?;
+	}
 
 	Ok(())
 }

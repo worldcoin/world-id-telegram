@@ -9,7 +9,7 @@ use indoc::formatdoc;
 use serde_json::json;
 use std::net::SocketAddr;
 use teloxide::{
-	types::{ChatId, MessageId, User},
+	types::{ChatId, User, UserId},
 	Bot,
 };
 use tokio::signal;
@@ -47,12 +47,13 @@ pub async fn start(bot: Bot, config: AppConfig, bot_data: User, join_requests: J
 
 async fn verify_page(
 	Extension(config): Extension<AppConfig>,
-	Path((chat_id, msg_id)): Path<(ChatId, i32)>,
+	Path((chat_id, user_id)): Path<(ChatId, UserId)>,
 	Extension(join_reqs): Extension<JoinRequests>,
 ) -> Result<Html<String>, StatusCode> {
-	if !join_reqs.contains_key(&(chat_id, MessageId(msg_id))) {
-		return Err(StatusCode::NOT_FOUND);
-	}
+	let join_req = join_reqs
+		.get(&(chat_id, user_id))
+		.ok_or(StatusCode::NOT_FOUND)?;
+	let msg_id = join_req.msg_id.ok_or(StatusCode::CONFLICT)?;
 
 	let page = formatdoc! {"<!DOCTYPE html>
         <html lang=\"en\">
@@ -102,15 +103,14 @@ struct VerifyRequest {
 async fn verify_api(
 	Extension(bot): Extension<Bot>,
 	Extension(config): Extension<AppConfig>,
-	Path((chat_id, msg_id)): Path<(ChatId, i32)>,
+	Path((chat_id, user_id)): Path<(ChatId, UserId)>,
 	Extension(join_reqs): Extension<JoinRequests>,
 	Json(req): Json<VerifyRequest>,
 ) -> Result<&'static str, StatusCode> {
-	let msg_id = MessageId(msg_id);
-
 	let join_req = join_reqs
-		.get(&(chat_id, msg_id))
+		.get(&(chat_id, user_id))
 		.ok_or(StatusCode::NOT_FOUND)?;
+	let msg_id = join_req.msg_id.ok_or(StatusCode::CONFLICT)?;
 
 	reqwest::Client::new()
 		.post(format!(
@@ -133,7 +133,7 @@ async fn verify_api(
 
 	drop(join_req);
 
-	on_verified(bot, chat_id, msg_id, join_reqs)
+	on_verified(bot, chat_id, user_id, join_reqs)
 		.await
 		.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
