@@ -35,7 +35,7 @@ pub async fn start(bot: Bot, config: AppConfig, bot_data: User, join_requests: J
 		.layer(Extension(config))
 		.layer(Extension(join_requests));
 
-	let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
+	let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
 	log::info!("Starting server at http://{addr}");
 
 	axum::Server::bind(&addr)
