@@ -6,9 +6,11 @@ use teloxide::{
 	types::{ChatId, User, UserId},
 	utils::html::escape,
 };
+use url::Url;
 
-#[derive(Debug, Clone, Default, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct AppConfig {
+	pub app_url: Url,
 	pub app_id: String,
 	pub bot_token: String,
 	#[serde(flatten, default)]
@@ -85,7 +87,12 @@ pub struct MessagesText {
 impl MessagesText {
 	pub fn create_welcome_msg(&self, user: &User, chat_name: &str) -> String {
 		self.new_user_template
-			.replace("{TAGUSER}", &user.mention().unwrap())
+			.replace(
+				"{TAGUSER}",
+				&user.mention().unwrap_or_else(|| {
+					format!("[{}](tg://user?id={})", user.full_name(), user.id,)
+				}),
+			)
 			.replace("{CHATNAME}", &escape(chat_name))
 	}
 }

@@ -1,10 +1,11 @@
 [package]
+license = "MIT"
+edition = "2021"
+version = "0.1.0"
+readme = "README.md"
 name = "world-id-telegram"
 authors = ["Miguel Piedrafita <rust@miguel.build>"]
-version = "0.1.0"
-edition = "2021"
 repository = "https://github.com/worldcoin/world-id-telegram"
-license = "MIT"
 description = "Add sybil-resistance to Telegram groups with World ID."
 keywords = [
     "telegram",
@@ -15,21 +16,21 @@ keywords = [
     "world-id",
     "worldcoin",
 ]
-readme = "README.md"
 
 [dependencies]
 log = "0.4"
 rand = "0.8"
 url = "2.4.1"
+indoc = "2.0.4"
 dashmap = "5.5"
+axum = "0.6.20"
+dotenvy = "0.15.7"
 serde_with = "3.3"
+reqwest = "0.11.22"
+serde_json = "1.0.108"
 humantime-serde = "1.1"
 pretty_env_logger = "0.5"
 tokio = { version = "1.32", features = ["full"] }
 config = { version = "0.13", features = ["toml"] }
 serde = { version = "1.0", features = ["derive"] }
 teloxide = { version = "0.12", features = ["macros"] }
-dotenvy = "0.15.7"
-axum = "0.6.20"
-reqwest = "0.11.22"
-serde_json = "1.0.108"

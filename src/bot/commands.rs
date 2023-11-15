@@ -7,7 +7,10 @@ use teloxide::{
 	Bot,
 };
 
-use crate::{bot::HandlerResult, config::GroupsConfig};
+use crate::{
+	bot::HandlerResult,
+	config::{AppConfig, GroupsConfig},
+};
 
 #[derive(BotCommands)]
 #[command(rename_rule = "lowercase", description = "Available commands:")]
@@ -22,7 +25,7 @@ pub enum Command {
 
 pub async fn command_handler(
 	bot: Bot,
-	config: Arc<GroupsConfig>,
+	config: Arc<AppConfig>,
 	msg: Message,
 	me: Me,
 	text: String,
@@ -31,8 +34,8 @@ pub async fn command_handler(
 		return Ok(());
 	}
 
-	if !config.is_group_allowed(msg.chat.id) {
-		return on_group_not_allowed(bot, config, msg).await;
+	if !config.groups_config.is_group_allowed(msg.chat.id) {
+		return on_group_not_allowed(bot, &config.groups_config, msg).await;
 	}
 
 	let Ok(command) = BotCommands::parse(text.as_str(), me.username()) else {
@@ -77,11 +80,7 @@ pub async fn command_handler(
 	Ok(())
 }
 
-pub async fn on_group_not_allowed(
-	bot: Bot,
-	config: Arc<GroupsConfig>,
-	msg: Message,
-) -> HandlerResult {
+pub async fn on_group_not_allowed(bot: Bot, config: &GroupsConfig, msg: Message) -> HandlerResult {
 	log::error!(
 		"Unknown chat {} with id {}",
 		msg.chat.title().unwrap_or_default(),

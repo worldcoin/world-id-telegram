@@ -1,10 +1,15 @@
 use axum::{
-	extract::Path, http::StatusCode, response::Redirect, routing::get, Extension, Json, Router,
+	extract::Path,
+	http::StatusCode,
+	response::{Html, Redirect},
+	routing::get,
+	Extension, Json, Router,
 };
+use indoc::formatdoc;
 use serde_json::json;
 use std::net::SocketAddr;
 use teloxide::{
-	types::{MessageId, User},
+	types::{ChatId, MessageId, User},
 	Bot,
 };
 use tokio::signal;
@@ -22,7 +27,10 @@ pub async fn start(bot: Bot, config: AppConfig, bot_data: User, join_requests: J
 				Redirect::permanent(&format!("https://t.me/{}", bot_data.username.unwrap()))
 			}),
 		)
-		.route("/verify/:msg_id", get(verify_page).post(verify_api))
+		.route(
+			"/verify/:chat_id/:msg_id",
+			get(verify_page).post(verify_api),
+		)
 		.layer(Extension(bot))
 		.layer(Extension(config))
 		.layer(Extension(join_requests));
@@ -38,14 +46,50 @@ pub async fn start(bot: Bot, config: AppConfig, bot_data: User, join_requests: J
 }
 
 async fn verify_page(
+	Path(chat_id): Path<ChatId>,
 	Path(msg_id): Path<MessageId>,
+	Extension(config): Extension<AppConfig>,
 	Extension(join_reqs): Extension<JoinRequests>,
-) -> Result<&'static str, StatusCode> {
-	let _join_req = join_reqs.get(&msg_id).ok_or(StatusCode::NOT_FOUND)?;
+) -> Result<Html<String>, StatusCode> {
+	if !join_reqs.contains_key(&(chat_id, msg_id)) {
+		return Err(StatusCode::NOT_FOUND);
+	}
 
-	//TODO: WorldID proof generation
+	let page = formatdoc! {"<!DOCTYPE html>
+        <html lang=\"en\">
+            <head>
+                <meta charset=\"UTF-8\" />
+                <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" />
+                <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+                <title>Verify with World ID</title>
+            </head>
+            <body>
+                <script src=\"https://unpkg.com/@worldcoin/idkit@0.5.1/build/idkit-js.js\"></script>
 
-	Ok("Hello, World!")
+                <script>
+                    IDKit.init({{
+                        signal: '{msg_id}',
+                        app_id: '{app_id}',
+                        action: '{chat_id}',
+                        enableTelemetry: true,
+                        credential_types: ['phone', 'orb'],
+                    }})
+
+                    window.addEventListener('load', async () => {{
+                        await fetch('/verify/{chat_id}/{msg_id}', {{
+                            method: 'POST',
+                            body: JSON.stringify(await IDKit.open()),
+                            headers: {{ 'Content-Type': 'application/json' }},
+                        }})
+
+                        alert('Successfully verified!')
+                    }})
+                </script>
+            </body>
+        </html>", app_id = config.app_id
+	};
+
+	Ok(Html(page))
 }
 
 #[derive(Debug, serde::Deserialize)]
@@ -58,12 +102,15 @@ struct VerifyRequest {
 
 async fn verify_api(
 	Extension(bot): Extension<Bot>,
+	Path(chat_id): Path<ChatId>,
 	Path(msg_id): Path<MessageId>,
 	Extension(config): Extension<AppConfig>,
 	Extension(join_reqs): Extension<JoinRequests>,
 	Json(req): Json<VerifyRequest>,
 ) -> Result<&'static str, StatusCode> {
-	let join_req = join_reqs.get(&msg_id).ok_or(StatusCode::NOT_FOUND)?;
+	let join_req = join_reqs
+		.get(&(chat_id, msg_id))
+		.ok_or(StatusCode::NOT_FOUND)?;
 
 	reqwest::Client::new()
 		.post(format!(
@@ -72,8 +119,8 @@ async fn verify_api(
 		))
 		.json(&json!({
 			"signal": msg_id,
+			"action": chat_id,
 			"proof": req.proof,
-			"action": join_req.chat_id,
 			"merkle_root": req.merkle_root,
 			"nullifier_hash": req.nullifier_hash,
 			"credential_type": req.credential_type,
@@ -86,7 +133,7 @@ async fn verify_api(
 
 	drop(join_req);
 
-	on_verified(bot, msg_id, join_reqs)
+	on_verified(bot, chat_id, msg_id, join_reqs)
 		.await
 		.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 

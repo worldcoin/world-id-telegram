@@ -16,21 +16,19 @@ mod commands;
 mod join_check;
 
 type HandlerResult = Result<(), HandlerError>;
-pub type JoinRequests = Arc<DashMap<MessageId, JoinRequest>>;
+pub type JoinRequests = Arc<DashMap<(ChatId, MessageId), JoinRequest>>;
 type HandlerError = Box<dyn std::error::Error + Send + Sync>;
 
 #[derive(Clone)]
 pub struct JoinRequest {
 	pub user_id: UserId,
-	pub chat_id: ChatId,
 	pub is_verified: bool,
 }
 
 impl JoinRequest {
-	fn new(user_id: UserId, chat_id: ChatId) -> Self {
+	fn new(user_id: UserId) -> Self {
 		Self {
 			user_id,
-			chat_id,
 			is_verified: false,
 		}
 	}
@@ -51,7 +49,7 @@ pub async fn start(bot: Bot, config: AppConfig, join_requests: JoinRequests) {
 
 	Dispatcher::builder(bot, handler)
 		.default_handler(|_| async {})
-		.dependencies(dptree::deps![Arc::new(config.groups_config), join_requests])
+		.dependencies(dptree::deps![Arc::new(config), join_requests])
 		.enable_ctrlc_handler()
 		.build()
 		.dispatch()

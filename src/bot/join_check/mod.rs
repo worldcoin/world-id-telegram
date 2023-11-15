@@ -1,28 +1,28 @@
 use std::sync::Arc;
+
 use teloxide::{
 	prelude::*,
 	types::{ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, MessageId, User},
 	utils::html::escape,
 };
-use url::Url;
 
 use crate::{
 	bot::{commands::on_group_not_allowed, HandlerResult, JoinRequest, JoinRequests},
-	config::GroupsConfig,
+	config::AppConfig,
 };
 
 pub async fn join_handler(
 	bot: Bot,
 	msg: Message,
 	users: Vec<User>,
-	config: Arc<GroupsConfig>,
+	config: Arc<AppConfig>,
 	join_requests: JoinRequests,
 ) -> HandlerResult {
-	if !config.is_group_allowed(msg.chat.id) {
-		return on_group_not_allowed(bot, config, msg).await;
+	if !config.groups_config.is_group_allowed(msg.chat.id) {
+		return on_group_not_allowed(bot, &config.groups_config, msg).await;
 	}
 
-	let chat_cfg = config.get(msg.chat.id);
+	let chat_cfg = config.groups_config.get(msg.chat.id);
 
 	for user in users {
 		let join_requests = join_requests.clone();
@@ -44,7 +44,9 @@ pub async fn join_handler(
 
 		let verify_button = InlineKeyboardButton::url(
 			"Verify with World ID",
-			Url::parse("https://example.com").unwrap(),
+			config
+				.app_url
+				.join(&format!("verify/{}/{}", msg.chat.id, msg.id))?,
 		);
 
 		let msg_id = bot
@@ -55,7 +57,7 @@ pub async fn join_handler(
 			.await?
 			.id;
 
-		join_requests.insert(msg_id, JoinRequest::new(user.id, msg.chat.id));
+		join_requests.insert((msg.chat.id, msg_id), JoinRequest::new(user.id));
 
 		tokio::spawn({
 			let bot = bot.clone();
@@ -63,7 +65,7 @@ pub async fn join_handler(
 			async move {
 				tokio::time::sleep(ban_after).await;
 
-				if let Some((_, data)) = join_requests.remove(&msg_id) {
+				if let Some((_, data)) = join_requests.remove(&(msg.chat.id, msg_id)) {
 					if !data.is_verified {
 						bot.ban_chat_member(msg.chat.id, data.user_id)
 							.await
@@ -83,23 +85,24 @@ pub async fn join_handler(
 
 pub async fn on_verified(
 	bot: Bot,
+	chat_id: ChatId,
 	msg_id: MessageId,
 	join_requests: JoinRequests,
 ) -> HandlerResult {
 	let mut join_req = join_requests
-		.get_mut(&msg_id)
+		.get_mut(&(chat_id, msg_id))
 		.ok_or("Can't find the message id in group dialogue")?;
 
-	let Some(permissions) = bot.get_chat(join_req.chat_id).await?.permissions() else {
+	let Some(permissions) = bot.get_chat(chat_id).await?.permissions() else {
 		return Err("Can't get the group permissions".into());
 	};
 
 	join_req.is_verified = true;
 
-	bot.restrict_chat_member(join_req.chat_id, join_req.user_id, permissions)
+	bot.restrict_chat_member(chat_id, join_req.user_id, permissions)
 		.await?;
 
-	bot.delete_message(join_req.chat_id, msg_id).await?;
+	bot.delete_message(chat_id, msg_id).await?;
 
 	Ok(())
 }

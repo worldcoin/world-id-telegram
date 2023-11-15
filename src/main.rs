@@ -1,7 +1,11 @@
 use dashmap::DashMap;
 use dotenvy::dotenv;
 use std::sync::Arc;
-use teloxide::{requests::Requester, types::MessageId, Bot};
+use teloxide::{
+	requests::Requester,
+	types::{ChatId, MessageId},
+	Bot,
+};
 
 use crate::{bot::JoinRequest, config::AppConfig};
 
@@ -15,7 +19,7 @@ async fn main() {
 	pretty_env_logger::init();
 
 	let config = AppConfig::try_read().expect("Failed to read config");
-	let join_requests = Arc::new(DashMap::<MessageId, JoinRequest>::new());
+	let join_requests = Arc::new(DashMap::<(ChatId, MessageId), JoinRequest>::new());
 
 	let bot = Bot::new(&config.bot_token);
 	let bot_data = bot.get_me().await.expect("Failed to get bot account");
