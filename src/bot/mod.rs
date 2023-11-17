@@ -1,5 +1,4 @@
-use dashmap::DashMap;
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 use teloxide::{
 	dispatching::{MessageFilterExt, UpdateFilterExt},
 	prelude::{dptree, Dispatcher},
@@ -8,6 +7,7 @@ use teloxide::{
 	utils::command::BotCommands,
 	Bot,
 };
+use tokio::sync::RwLock;
 
 use crate::{bot::commands::Command, config::AppConfig};
 pub use join_check::on_verified;
@@ -16,7 +16,7 @@ mod commands;
 mod join_check;
 
 type HandlerResult = Result<(), HandlerError>;
-pub type JoinRequests = Arc<DashMap<(ChatId, UserId), JoinRequest>>;
+pub type JoinRequests = Arc<RwLock<HashMap<(ChatId, UserId), JoinRequest>>>;
 type HandlerError = Box<dyn std::error::Error + Send + Sync>;
 
 #[derive(Clone)]
