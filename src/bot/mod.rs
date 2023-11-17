@@ -19,7 +19,7 @@ type HandlerResult = Result<(), HandlerError>;
 pub type JoinRequests = Arc<DashMap<(ChatId, UserId), JoinRequest>>;
 type HandlerError = Box<dyn std::error::Error + Send + Sync>;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct JoinRequest {
 	pub is_verified: bool,
 	pub msg_id: Option<MessageId>,

@@ -28,7 +28,7 @@ pub async fn start(bot: Bot, config: AppConfig, bot_data: User, join_requests: J
 			}),
 		)
 		.route(
-			"/verify/:chat_id/:msg_id",
+			"/verify/:chat_id/:user_id",
 			get(verify_page).post(verify_api),
 		)
 		.layer(Extension(bot))
@@ -68,6 +68,7 @@ async fn verify_page(
 
                 <script>
                     IDKit.init({{
+                        autoClose: true,
                         signal: '{msg_id}',
                         app_id: '{app_id}',
                         action: '{chat_id}',
@@ -76,13 +77,16 @@ async fn verify_page(
                     }})
 
                     window.addEventListener('load', async () => {{
-                        await fetch('/verify/{chat_id}/{msg_id}', {{
+                        const res = await fetch('/verify/{chat_id}/{user_id}', {{
                             method: 'POST',
                             body: JSON.stringify(await IDKit.open()),
                             headers: {{ 'Content-Type': 'application/json' }},
                         }})
 
-                        alert('Successfully verified!')
+                        if (res.ok) alert('Successfully verified!')
+                        else alert('Something went wrong, please try again later.')
+
+                        window.close()
                     }})
                 </script>
             </body>
