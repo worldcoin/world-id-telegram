@@ -57,9 +57,7 @@ pub async fn join_handler(
 			.await?
 			.id;
 
-		let mut join_requests_wr = join_requests.write().await;
-		join_requests_wr.insert((msg.chat.id, user.id), JoinRequest::new(msg_id));
-		drop(join_requests_wr);
+		join_requests.insert((msg.chat.id, user.id), JoinRequest::new(msg_id));
 
 		tokio::spawn({
 			let bot = bot.clone();
@@ -67,16 +65,13 @@ pub async fn join_handler(
 			async move {
 				tokio::time::sleep(ban_after).await;
 
-				let mut join_requests_wr = join_requests.write().await;
-				if let Some(join_req) = join_requests_wr.remove(&(msg.chat.id, user.id)) {
-					drop(join_requests_wr);
-
-					if !join_req.is_verified {
+				if let Some((_, data)) = join_requests.remove(&(msg.chat.id, user.id)) {
+					if !data.is_verified {
 						bot.ban_chat_member(msg.chat.id, user.id)
 							.await
 							.expect("Failed to ban the member after timeout");
 
-						if let Some(msg_id) = join_req.msg_id {
+						if let Some(msg_id) = data.msg_id {
 							bot.delete_message(msg.chat.id, msg_id)
 								.await
 								.expect("Failed to delete the message after timeout");
@@ -96,8 +91,7 @@ pub async fn on_verified(
 	user_id: UserId,
 	join_requests: JoinRequests,
 ) -> HandlerResult {
-	let mut join_requests_w = join_requests.write().await;
-	let join_req = join_requests_w
+	let mut join_req = join_requests
 		.get_mut(&(chat_id, user_id))
 		.ok_or("Can't find the message id in group dialogue")?;
 

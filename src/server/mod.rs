@@ -50,8 +50,6 @@ async fn verify_page(
 	Path((chat_id, user_id)): Path<(ChatId, UserId)>,
 	Extension(join_reqs): Extension<JoinRequests>,
 ) -> Result<Html<String>, StatusCode> {
-	let join_reqs = join_reqs.read().await;
-
 	let join_req = join_reqs
 		.get(&(chat_id, user_id))
 		.ok_or(StatusCode::NOT_FOUND)?;
@@ -109,9 +107,7 @@ async fn verify_api(
 	Extension(join_reqs): Extension<JoinRequests>,
 	Json(req): Json<VerifyRequest>,
 ) -> Result<&'static str, StatusCode> {
-	let join_reqs_r = join_reqs.read().await;
-
-	let join_req = join_reqs_r
+	let join_req = join_reqs
 		.get(&(chat_id, user_id))
 		.ok_or(StatusCode::NOT_FOUND)?;
 	let msg_id = join_req.msg_id.ok_or(StatusCode::CONFLICT)?;
@@ -135,7 +131,7 @@ async fn verify_api(
 		.error_for_status()
 		.map_err(|_| StatusCode::BAD_REQUEST)?;
 
-	drop(join_reqs_r);
+	drop(join_req);
 
 	on_verified(bot, chat_id, user_id, join_reqs)
 		.await
