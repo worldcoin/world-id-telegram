@@ -64,7 +64,7 @@ async fn verify_page(
                 <title>Verify with World ID</title>
             </head>
             <body>
-                <script src=\"https://unpkg.com/@worldcoin/idkit@0.5.1/build/idkit-js.js\"></script>
+                <script src=\"https://unpkg.com/@worldcoin/idkit-standalone/build/index.global.js\"></script>
 
                 <script>
                     IDKit.init({{
