@@ -122,9 +122,9 @@ async fn verify_api(
 			config.app_id
 		))
 		.json(&json!({
-			"signal": msg_id,
-			"action": chat_id,
 			"proof": req.proof,
+			"signal": msg_id.to_string(),
+			"action": chat_id.to_string(),
 			"merkle_root": req.merkle_root,
 			"nullifier_hash": req.nullifier_hash,
 			"credential_type": req.credential_type,
