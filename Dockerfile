@@ -28,3 +28,6 @@ COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/world-id-teleg
 USER 100
 EXPOSE 8000
 CMD ["/app/world-id-telegram"]
+
+HEALTHCHECK --interval=5m --timeout=3s \
+  CMD curl -f http://localhost:8000/health || exit 1

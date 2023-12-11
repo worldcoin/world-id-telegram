@@ -27,6 +27,7 @@ pub async fn start(bot: Bot, config: AppConfig, bot_data: User, join_requests: J
 				Redirect::permanent(&format!("https://t.me/{}", bot_data.username.unwrap()))
 			}),
 		)
+		.route("/health", get(|| async { "OK" }))
 		.route(
 			"/verify/:chat_id/:user_id",
 			get(verify_page).post(verify_api),
