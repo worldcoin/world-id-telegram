@@ -85,7 +85,7 @@ async fn verify_page(
                         }})
 
                         if (res.ok) alert('Successfully verified! You can now close this and go back to the group.')
-                        else if (res.status === 429) alert('This World ID has already been used to join this group. You can\'t do it again!')
+                        else if (res.status === 429) alert('This World ID has already been used to join this group. You can\\'t do it again!')
                         else alert('Something went wrong, please try again later.')
 
                         window.close()
