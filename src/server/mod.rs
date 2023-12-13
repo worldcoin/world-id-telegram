@@ -85,6 +85,7 @@ async fn verify_page(
                         }})
 
                         if (res.ok) alert('Successfully verified! You can now close this and go back to the group.')
+                        else if (res.status === 429) alert('This World ID has already been used to join this group. You can\'t do it again!')
                         else alert('Something went wrong, please try again later.')
 
                         window.close()
@@ -136,11 +137,23 @@ async fn verify_api(
 		.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
 	if req.status().is_client_error() || req.status().is_server_error() {
-		log::error!(
-			"Developer Portal returned error: {:?}",
-			req.json::<serde_json::Value>().await,
-		);
+		let res = req.json::<serde_json::Value>().await.map_err(|e| {
+			log::error!("Failed to deserialize dev portal body: {e:?}");
 
+			StatusCode::INTERNAL_SERVER_ERROR
+		})?;
+
+		let Some(code) = res.get("code") else {
+			log::error!("Developer Portal returned error: {:?}", res);
+
+			return Err(StatusCode::BAD_REQUEST);
+		};
+
+		if code.as_str() == Some("max_verifications_reached") {
+			return Err(StatusCode::TOO_MANY_REQUESTS);
+		}
+
+		log::error!("Failed to verify proof: {:?}", res);
 		return Err(StatusCode::BAD_REQUEST);
 	}
 
