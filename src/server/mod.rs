@@ -84,7 +84,7 @@ async fn verify_page(
                             headers: {{ 'Content-Type': 'application/json' }},
                         }})
 
-                        if (res.ok) alert('Successfully verified!')
+                        if (res.ok) alert('Successfully verified! You can now close this and go back to the group.')
                         else alert('Something went wrong, please try again later.')
 
                         window.close()
@@ -117,7 +117,7 @@ async fn verify_api(
 		.ok_or(StatusCode::NOT_FOUND)?;
 	let msg_id = join_req.msg_id.ok_or(StatusCode::CONFLICT)?;
 
-	reqwest::Client::new()
+	let req = reqwest::Client::new()
 		.post(format!(
 			"https://developer.worldcoin.org/api/v1/verify/{}",
 			config.app_id
@@ -133,9 +133,16 @@ async fn verify_api(
 		}))
 		.send()
 		.await
-		.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
-		.error_for_status()
-		.map_err(|_| StatusCode::BAD_REQUEST)?;
+		.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+	if req.status().is_client_error() || req.status().is_server_error() {
+		log::error!(
+			"Developer Portal returned error: {:?}",
+			req.json::<serde_json::Value>().await,
+		);
+
+		return Err(StatusCode::BAD_REQUEST);
+	}
 
 	drop(join_req);
 
