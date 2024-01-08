@@ -6,6 +6,10 @@
 # You can put it below or set the WLD_CAPTCHA_BOT_TOKEN env var
 # bot_token = "..."
 
+# You can optionally set up PostHog to track bot usage.
+# To enable, put your PostHog API token below or set the WLD_CAPTCHA_POSTHOG_TOKEN env var
+# posthog_token = "..."
+
 # The URL to the server running this bot. It must be accessible from the internet.
 # You can put it below or set the WLD_CAPTCHA_APP_URL env var
 # app_url = "..."

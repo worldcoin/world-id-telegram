@@ -6,13 +6,13 @@ use axum::{
 	Extension, Json, Router,
 };
 use indoc::formatdoc;
+use posthog_rs::Event;
 use serde_json::json;
-use std::net::SocketAddr;
 use teloxide::{
 	types::{ChatId, User, UserId},
 	Bot,
 };
-use tokio::signal;
+use tokio::{net::TcpListener, signal};
 
 use crate::{
 	bot::{on_verified, JoinRequests},
@@ -36,11 +36,13 @@ pub async fn start(bot: Bot, config: AppConfig, bot_data: User, join_requests: J
 		.layer(Extension(config))
 		.layer(Extension(join_requests));
 
-	let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
-	log::info!("Starting server at http://{addr}");
+	let listener = TcpListener::bind(("0.0.0.0", 8000)).await.unwrap();
+	log::info!(
+		"Starting server at http://{}",
+		listener.local_addr().unwrap()
+	);
 
-	axum::Server::bind(&addr)
-		.serve(app.into_make_service())
+	axum::serve(listener, app)
 		.with_graceful_shutdown(async move { signal::ctrl_c().await.unwrap() })
 		.await
 		.unwrap();
@@ -162,6 +164,16 @@ async fn verify_api(
 	on_verified(bot, chat_id, user_id, join_reqs)
 		.await
 		.map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+	if let Some(posthog) = config.posthog() {
+		let event = Event::new("telegram integration verification", &user_id.to_string());
+
+		posthog.capture(event).map_err(|e| {
+			log::error!("Failed to send event to PostHog: {e:?}");
+
+			StatusCode::INTERNAL_SERVER_ERROR
+		})?;
+	}
 
 	Ok("Verified!")
 }

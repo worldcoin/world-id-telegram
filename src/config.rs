@@ -15,6 +15,7 @@ pub struct AppConfig {
 	pub bot_token: String,
 	#[serde(flatten, default)]
 	pub groups_config: GroupsConfig,
+	pub posthog_token: Option<String>,
 }
 
 impl AppConfig {
@@ -25,6 +26,12 @@ impl AppConfig {
 			.add_source(Environment::with_prefix("WLD_CAPTCHA"))
 			.build()?
 			.try_deserialize()
+	}
+
+	pub fn posthog(&self) -> Option<posthog_rs::Client> {
+		self.posthog_token
+			.as_ref()
+			.map(|token| posthog_rs::client(token.as_str()))
 	}
 }
 
