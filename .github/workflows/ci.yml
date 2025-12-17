@@ -16,6 +16,8 @@ jobs:
         steps:
             - uses: actions/checkout@v3
             - uses: dtolnay/rust-toolchain@stable
+              with:
+                  components: rustfmt, clippy
             - name: Install cargo-audit
               run: cargo install cargo-audit
             - name: Check Format
