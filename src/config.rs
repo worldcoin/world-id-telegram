@@ -65,6 +65,7 @@ impl GroupsConfig {
 pub struct GroupSettings {
 	pub chat_name: Option<String>,
 	/// List of allowed admin to use bot commands and admin related stuff
+	#[allow(dead_code)]
 	pub admin_ids: Option<Vec<UserId>>,
 	#[serde(with = "humantime_serde")]
 	pub ban_after: Duration,
