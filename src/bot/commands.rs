@@ -2,7 +2,7 @@ use std::sync::Arc;
 use teloxide::{
 	payloads::SendMessageSetters,
 	requests::Requester,
-	types::{Me, Message},
+	types::{Me, Message, ReplyParameters},
 	utils::command::BotCommands,
 	Bot,
 };
@@ -30,7 +30,7 @@ pub async fn command_handler(
 	me: Me,
 	text: String,
 ) -> HandlerResult {
-	if msg.from().is_none() {
+	if msg.from.is_none() {
 		return Ok(());
 	}
 
@@ -46,7 +46,7 @@ pub async fn command_handler(
 		Command::Check => {
 			if msg.chat.is_private() {
 				bot.send_message(msg.chat.id, "You can only use this bot in public groups. Please add me to a public group (with admin permissions) and try again.")
-					.reply_to_message_id(msg.id)
+					.reply_parameters(ReplyParameters::new(msg.id))
 					.await?;
 				return Ok(());
 			}
@@ -58,10 +58,11 @@ pub async fn command_handler(
 
 			if is_admin {
 				bot.send_message(msg.chat.id, "Bot has admin permissions and is ready to go! Once someone joins the group, they'll be asked to prove they're human with World ID before they can send messages.")
-					.reply_to_message_id(msg.id)
+					.reply_parameters(ReplyParameters::new(msg.id))
 					.await?;
 			} else {
-				bot.send_message(msg.chat.id, "Bot doesn't have admin permissions! Please, give it admin permissions and try again.").reply_to_message_id(msg.id)
+				bot.send_message(msg.chat.id, "Bot doesn't have admin permissions! Please, give it admin permissions and try again.")
+					.reply_parameters(ReplyParameters::new(msg.id))
 					.await?;
 			}
 		},
@@ -71,7 +72,9 @@ pub async fn command_handler(
 Welcome to the World ID Telegram bot!
 
 You can use me to protect your group from spammers and bots. To get started, add me to your (public) group and give me admin permissions. When someone joins your group, they'll be asked to prove they're human with World ID before they can send messages.
-                "#).reply_to_message_id(msg.id).await?;
+                "#)
+					.reply_parameters(ReplyParameters::new(msg.id))
+					.await?;
 			}
 		},
 	};

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use teloxide::{
 	prelude::*,
-	types::{ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, User},
+	types::{ChatPermissions, InlineKeyboardButton, InlineKeyboardMarkup, ReplyParameters, User},
 	utils::html::escape,
 };
 
@@ -51,7 +51,7 @@ pub async fn join_handler(
 
 		let msg_id = bot
 			.send_message(msg.chat.id, welcome_msg)
-			.reply_to_message_id(msg.id)
+			.reply_parameters(ReplyParameters::new(msg.id))
 			.parse_mode(teloxide::types::ParseMode::Html)
 			.reply_markup(InlineKeyboardMarkup::new([vec![verify_button]]))
 			.await?
