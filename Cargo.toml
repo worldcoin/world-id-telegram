@@ -18,20 +18,20 @@ keywords = [
 ]
 
 [dependencies]
-log = "0.4"
-rand = "0.8"
-url = "2.5"
-axum = "0.7"
-indoc = "2.0"
-dashmap = "6"
-dotenvy = "0.15"
-serde_with = "3"
-reqwest = { version = "0.12", features = ["json"] }
-posthog-rs = "0.2"
-serde_json = "1.0"
-humantime-serde = "1.1"
-pretty_env_logger = "0.5"
-tokio = { version = "1.43", features = ["full"] }
-config = { version = "0.14", features = ["toml"] }
-serde = { version = "1.0", features = ["derive"] }
-teloxide = { version = "0.13", features = ["macros"] }
+log = "0.4.29"
+rand = "0.8.5"
+url = "2.5.7"
+axum = "0.7.9"
+indoc = "2.0.7"
+dashmap = "6.1.0"
+dotenvy = "0.15.7"
+serde_with = "3.16.1"
+reqwest = { version = "0.12.26", features = ["json"] }
+posthog-rs = "0.2.2"
+serde_json = "1.0.145"
+humantime-serde = "1.1.1"
+pretty_env_logger = "0.5.0"
+tokio = { version = "1.48.0", features = ["full"] }
+config = { version = "0.14.1", features = ["toml"] }
+serde = { version = "1.0.228", features = ["derive"] }
+teloxide = { version = "0.13.0", features = ["macros"] }
