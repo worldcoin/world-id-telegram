@@ -11,10 +11,13 @@ env:
 jobs:
     build:
         name: Build & test
-        runs-on: ubuntu-latest
+        runs-on:
+          group: arc-public-large-amd64-runner
         steps:
             - uses: actions/checkout@v3
             - uses: dtolnay/rust-toolchain@stable
+              with:
+                  components: rustfmt, clippy
             - name: Install cargo-audit
               run: cargo install cargo-audit
             - name: Check Format
