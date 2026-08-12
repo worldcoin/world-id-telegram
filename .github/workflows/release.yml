@@ -14,7 +14,9 @@ jobs:
           group: arc-public-large-amd64-runner
         permissions:
             contents: read
+            id-token: write
             packages: write
+            attestations: write
 
         steps:
             - name: Checkout repository
@@ -42,3 +44,11 @@ jobs:
                   file: ./Dockerfile
                   tags: ${{ steps.meta.outputs.tags }}
                   labels: ${{ steps.meta.outputs.labels }}
+
+            - name: Attest
+              id: attest
+              uses: actions/attest-build-provenance@v1
+              with:
+                  push-to-registry: true
+                  subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+                  subject-digest: ${{ steps.docker_build.outputs.digest }}
